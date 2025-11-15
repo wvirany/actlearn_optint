@@ -1,14 +1,35 @@
+# Python cache
 __pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
 *.ipynb_checkpoints
+.ipynb_checkpoints/
+
+# Data and intermediate files
 *.pkl
 *.npy
 *.csv
 *.txt
 *.pdf
 *.png
-*.DS_Store
+
+# OS junk (Windows/macOS)
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# Python packaging
 *.egg-info/
+
+# Local temp & outputs
 **/tmp/
+results/
+
+# Generated figures
 **/figures/
+
+# Dataset folders from this project
 **/perturb-CITE-seq/data/
 **/perturb-CITE-seq/preprocess/data/

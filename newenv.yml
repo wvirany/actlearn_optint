@@ -1,0 +1,40 @@
+name: actlearn
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - statsmodels
+  - numba
+  - llvmlite
+  - umap-learn
+  - matplotlib
+  - seaborn
+  - networkx
+  - pip
+  - pip:
+      - python-igraph
+      - pygraphviz
+      - tqdm
+      - holoviews
+      - bokeh
+      - datashader
+      - colorcet
+      - multipledispatch
+      - stdlib-list
+      - suds-community
+      - url-normalize
+      - xmltodict
+      - wrapt
+      - requests
+      - pyct
+      - pillow
+      - imageio
+      - joblib
+      - jupyterlab
+      - notebook

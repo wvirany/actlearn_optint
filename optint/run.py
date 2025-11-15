@@ -16,7 +16,7 @@ from optint.test import test_passive, test_active
 
 def run(problem, opts):
 
-	if opts.time:
+	if hasattr(opts, "time") and opts.time:
 		start = timeit.default_timer()
 
 	test = {
@@ -33,7 +33,7 @@ def run(problem, opts):
 		Actions.append(action)
 		Probs.append(prob)
 
-	if opts.time:
+	if getattr(opts, "time", False):
 		stop = timeit.default_timer()
 		return Actions, Probs, stop - start
 
