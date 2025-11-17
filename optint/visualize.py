@@ -4,61 +4,67 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-def draw(pdag, colored_set=set(), solved_set=set(), affected_set=set(), nw_ax=None, edge_weights=None, savefile=None):
+def draw(dag, edge_weights=None, title=None, savefile=None):
     """ 
     plot a partially directed graph
     """
     plt.clf()
 
-    p = pdag.nnodes
-
-    if nw_ax is None:
-        nw_ax = plt.subplot2grid((4, 4), (0, 0), colspan=12, rowspan=12)
+    p = dag.nnodes
 
     plt.gcf().set_size_inches(4, 4)
 
     # directed edges
     d = nx.DiGraph()
     d.add_nodes_from(list(range(p)))
-    for (i, j) in pdag.arcs:
+    for (i, j) in dag.arcs:
         d.add_edge(i, j)
-
-    # undirected edges
-    e = nx.Graph()
-    try:
-        for pair in pdag.edges:
-            (i, j) = tuple(pair)
-            e.add_edge(i, j)
-    except:
-        print('there are no undirected edges')
     
-    # edge color
-    if edge_weights is not None:
-        color_d = []
-        for i,j in d.edges:
-            color_d.append(abs(edge_weights[i,j]))
-
-        color_e = []
-        for i,j in e.edges:
-            color_e.append(abs(edge_weights[i, j]))
-    else:
-        color_d = 'k'
-        color_e = 'k'
-
-
-    # plot
-    print("plotting...")
     pos = nx.circular_layout(d)
-    nx.draw(e, pos=pos, node_color='w', style = 'dashed', ax=nw_ax, edge_cmap=plt.cm.Blues, edge_vmin=0, edge_vmax=1, edge_color=color_e)
-    color = ['w']*p
-    for i in affected_set:
-        color[i] = 'orange'
-    for i in colored_set:
-        color[i] = 'y'
-    for i in solved_set:
-        color[i] = 'grey'
-    nx.draw(d, pos=pos, node_color=color, ax=nw_ax, edge_cmap=plt.cm.Blues, edge_vmin=0, edge_vmax=1, edge_color=color_d) #, edge_width=2)
-    nx.draw_networkx_labels(d, pos, labels={node: node for node in range(p)}, ax=nw_ax)
+
+    nx.draw_networkx_nodes(
+        d,
+        pos,
+        node_color='lightblue',
+        node_size=600,
+        linewidths=3,
+    )
+
+    if edge_weights is not None:
+        edge_colors = [abs(edge_weights[i, j]) for i, j in d.edges()]
+        nx.draw_networkx_edges(
+            d,
+            pos,
+            edge_color=edge_colors,
+            edge_cmap=plt.cm.Blues,
+            width=1.5,
+            arrowsize=10,
+            edge_vmin=0.9,
+            edge_vmax=1,
+            min_source_margin=20,
+            min_target_margin=20,
+        )
+    else:
+        nx.draw_networkx_edges(
+            d,
+            pos,
+            edge_color='midnightblue',
+            width=1.5,
+            arrowsize=10,
+            min_source_margin=20,
+            min_target_margin=20,
+        )
+
+    nx.draw_networkx_labels(d, pos,
+        labels={node: node for node in range(p)},
+        font_size=14,
+    )
+
+    if title:
+        plt.title(title, fontsize=16, fontweight='bold')
+
+    plt.axis('off')
+    plt.tight_layout()
 
     if savefile is not None:
         plt.savefig(savefile)

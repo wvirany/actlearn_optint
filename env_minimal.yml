@@ -1,0 +1,16 @@
+name: optint-unknown-dag
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - matplotlib
+  - networkx
+  - pandas
+  - jupyter
+  - notebook
+  - pip
+  - pip:
+    - graphical-models
