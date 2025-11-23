@@ -1,6 +1,6 @@
 import numpy as np
+from causallearn.search.ScoreBased.GES import ges
 import graphical_models as gm
-from .data.dag import *
 
 
 def create_misspecified_dag(true_dag, n_changes=2):
@@ -28,7 +28,7 @@ def create_misspecified_dag(true_dag, n_changes=2):
             added += 1
         attempts += 1
     
-    return 
+    return wrong_dag
     
 
 def learn_dag(data, p):
@@ -38,9 +38,17 @@ def learn_dag(data, p):
     learned_graph = Record['G']
     for i in range(p):
         for j in range(p):
-            if learned_graph.graph[i, j] == -1:
+            if learned_graph.graph[i, j] == -1 and learned_graph.graph[j, i] == 1:
+                # Directed edge i -> j
                 G.add_arc(i, j)
+            elif learned_graph.graph[i, j] == -1 and learned_graph.graph[j, i] == -1:
+                # Undirected edge - pick direction by node index
+                if i < j:
+                    G.add_arc(i, j)
     return G
 
 
-def select_intervention(model, problem, n_per_step, measure='uniform'):
+def compute_shd(G1, G2):
+    edges1 = set(G1.arcs)
+    edges2 = set(G2.arcs)
+    return len(edges1.symmetric_difference(edges2))

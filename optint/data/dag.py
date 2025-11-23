@@ -16,7 +16,7 @@ def ordered_DAG(dag):
 
 
 # generate DAGs of different types
-def random_graph(nnodes, ratio=.4):
+def random_graph(nnodes, ratio=.2):
 	return gm.rand.directed_erdos(nnodes, ratio) 
 
 
