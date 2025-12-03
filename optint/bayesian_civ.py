@@ -86,7 +86,14 @@ for trial in range(n_trials):
     problem.DAG = true_dag
 
     # Run Bayesian
-    A_bayesian, _, SHD_bayesian = test_bayesian_active(problem, G_learned, opts)
+    A_bayesian, _, SHD_bayesian = test_bayesian_active(
+        problem, 
+        G_learned, 
+        opts,
+        use_ibge=True,
+        K=1,
+        am=0.1
+    )
 
     # Compute distances
     all_dist_oracle.append(get_distances(A_oracle, problem.a_target))
