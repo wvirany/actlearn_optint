@@ -71,6 +71,36 @@ class civ_acq(acquisition):
 		return d
 
 
+class WeightedAcquisition:
+	"""Weighted combination of multiple acquisition functions for Bayesian model averaging"""
+
+	def __init__(self, acquisitions_and_weights):
+		self.acquisitions_and_weights = acquisitions_and_weights
+
+	def evaluate(self, a):
+		weighted_sum = 0
+		for acquisition, weight in self.acquisitions_and_weights:
+			weighted_sum += weight * acquisition.evaluate(a)
+		return weighted_sum
+	
+	def optimize(self, x0, grad=None):
+
+		res = minimize(
+            self.evaluate, 
+            x0=x0, 
+            method='SLSQP',
+            jac=grad, 
+            bounds=Bounds(-1, 1), 
+            constraints={'type': 'ineq', 'fun': lambda x: 1 - np.linalg.norm(x), 'keep_feasible': True}
+        )
+		if res.success:
+			return res.x 
+		else:
+			print("Optimization fails...")
+			print(res.message)
+			return None
+
+
 class greedy_acq(acquisition):
 	def __init__(self, sigma_square, mean, var, mu_target, N):
 		super().__init__(sigma_square, mean, var, mu_target, N)

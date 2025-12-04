@@ -108,7 +108,7 @@ def test_active(problem, opts):
 	return A, Prob
 
 
-def test_bayesian_active(problem, G_init, opts, use_ibge=True, K=1, am=0.1):
+def test_bayesian_active(problem, G_init, opts, K=1, am=0.1):
     """
     Active learning with DAG re-learning.
     
@@ -116,9 +116,8 @@ def test_bayesian_active(problem, G_init, opts, use_ibge=True, K=1, am=0.1):
         problem: synthetic problem instance
         G_init: initial DAG (graphical_models.DAG object)
         opts: options object with attributes T, W, n, known_noise, measure
-        use_ibge: if True, use iBGe scoring; if False, use GES+BIC (legacy)
-        K: number of bootstrap samples for DAG uncertainty (only used if use_ibge=True)
-        am: iBGe hyperparameter (only used if use_ibge=True)
+        K: number of bootstrap samples for DAG uncertainty
+        am: iBGe hyperparameter
     
     Returns:
         A: list of interventions
@@ -153,14 +152,82 @@ def test_bayesian_active(problem, G_init, opts, use_ibge=True, K=1, am=0.1):
     # Active learning loop
     for i in range(opts.T - opts.W):
         # Compute acquisition function
-        prob_pad = model.prob_padded()
-        mean = np.array(prob_pad['mean'])
-        var = np.array(prob_pad['var'])
+
+        all_data = np.hstack(all_batches)
+        data_for_scoring, Imat = create_intervention_matrix(all_batches)
+
+        dags = []
+        scores = []
+
+        for k in range(K):
+
+            if K==1:
+                dag_data = all_data
+            else:
+                # Bootstrap sample
+                n_samples = all_data.shape[1]
+                bootstrap_indices = np.random.choice(n_samples, size=n_samples, replace=True)
+                dag_data = all_data[:, bootstrap_indices]
+            
+            # Learn DAG
+            dag_k = learn_dag(dag_data, problem.nnodes)
+            dag_k_array = dag_k.to_amat()[0]
+            
+            # Score on full dataset
+            score_k = compute_ibge_score(data_for_scoring, Imat, dag_k_array, am=am)
+            
+            dags.append(dag_k)
+            scores.append(score_k)
         
-        sigma_square = problem.sigma_square if opts.known_noise else np.zeros(problem.sigma_square.shape)
-        acquisition = civ_acq(sigma_square, mean, var, problem.mu_target, opts.n, opts.measure)
+        # Compute normalized weights
+        scores = np.array(scores)
+        weights = np.exp(scores - scores.max())
+        weights = weights / weights.sum()
+
+        if K > 1:
+            acquisitions = []
+
+            for k, (dag_k, w_k) in enumerate(zip(dags, weights)):
+                model_k = linearSCM(dag_k, {'pot_vec': 0, 'info_mat': 1})
+
+                for batch_k, a_k in zip(all_batches, all_interventions):
+                    model_k.update_posterior(a_k, batch_k)
+
+                # Get posterior
+                prob_pad = model_k.prob_padded()
+                mean_k = np.array(prob_pad['mean'])
+                var_k = np.array(prob_pad['var'])
+
+                sigma_square = problem.sigma_square if opts.known_noise else np.zeros(problem.sigma_square.shape)
+                acq_k = civ_acq(sigma_square, mean_k, var_k, problem.mu_target, opts.n, opts.measure)
+
+                acquisitions.append((acq_k, w_k))
+            
+            acquisition = WeightedAcquisition(acquisitions)
+
+            # Update current_dag to MAP for tracking
+            best_idx = np.argmax(scores)
+            current_dag = dags[best_idx]
+            model = linearSCM(current_dag, {'pot_vec': 0, 'info_mat': 1})
+
+            for batch_k, a_k in zip(all_batches, all_interventions):
+                model.update_posterior(a_k, batch_k)
         
-        # Optimize intervention
+        else:
+            # K = 1:
+            current_dag = dags[0]
+            model = linearSCM(current_dag, {'pot_vec': 0, 'info_mat': 1})
+            
+            for batch_k, a_k in zip(all_batches, all_interventions):
+                model.update_posterior(a_k, batch_k)
+
+                prob_pad = model.prob_padded()
+                mean = np.array(prob_pad['mean'])
+                var = np.array(prob_pad['var'])
+                
+                sigma_square = problem.sigma_square if opts.known_noise else np.zeros(problem.sigma_square.shape)
+                acquisition = civ_acq(sigma_square, mean, var, problem.mu_target, opts.n, opts.measure)
+
         try:
             a_jitter = a.reshape(-1) * np.random.uniform(0.8, 1.2, (problem.nnodes,))
             x01 = np.maximum(np.minimum(a_jitter, 1), -1)
@@ -197,52 +264,7 @@ def test_bayesian_active(problem, G_init, opts, use_ibge=True, K=1, am=0.1):
         batch = problem.sample(a, opts.n)
         all_batches.append(batch)
         all_interventions.append(a)
-        
-        # Re-learn DAG
-        all_data = np.hstack(all_batches)
-        
-        if use_ibge:
-            
-            data_for_scoring, Imat = create_intervention_matrix(all_batches)
-            
-            if K == 1:
-                # Single DAG with iBGe scoring
-                current_dag = learn_dag(all_data, problem.nnodes)
-            else:
-                # DAG Bootstrap
-                dags = []
-                scores = []
-                
-                for k in range(K):
-                    # Bootstrap sample
-                    n_samples = all_data.shape[1]
-                    bootstrap_indices = np.random.choice(n_samples, size=n_samples, replace=True)
-                    bootstrap_data = all_data[:, bootstrap_indices]
-                    
-                    # Learn DAG
-                    dag_k = learn_dag(bootstrap_data, problem.nnodes)
-                    dag_k_array = dag_k.to_amat()[0]
-                    
-                    # Score on full dataset
-                    score_k = compute_ibge_score(data_for_scoring, Imat, dag_k_array, am=am)
-                    
-                    dags.append(dag_k)
-                    scores.append(score_k)
-                
-                # Use MAP DAG
-                best_idx = np.argmax(scores)
-                current_dag = dags[best_idx]
-        else:
-            # Legacy: just use GES without iBGe
-            current_dag = learn_dag(all_data, problem.nnodes)
-        
-        # Update model
-        model = linearSCM(current_dag, {'pot_vec': 0, 'info_mat': 1})
-        
-        # Re-update with all data
-        for batch_k, a_k in zip(all_batches, all_interventions):
-            model.update_posterior(a_k, batch_k)
-        
+
         A.append(a)
         Prob.append(model.prob_padded())
         SHD.append(compute_shd(current_dag, problem.DAG))

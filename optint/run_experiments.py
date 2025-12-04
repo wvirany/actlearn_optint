@@ -77,7 +77,6 @@ def run_experiment_1(p, trial_id):
         problem, 
         G_learned, 
         opts,
-        use_ibge=True,
         K=1,
         am=0.1
     )
@@ -152,7 +151,6 @@ def run_experiment_2(p, K, trial_id):
         problem, 
         G_learned, 
         opts,
-        use_ibge=True,
         K=K,
         am=0.1
     )
