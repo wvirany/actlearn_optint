@@ -212,7 +212,12 @@ def test_bayesian_active(problem, G_init, opts, K=1, am=0.1):
 
             for batch_k, a_k in zip(all_batches, all_interventions):
                 model.update_posterior(a_k, batch_k)
-        
+
+            # Get mean / var from MAP model for optimization initialization
+            prob_pad = model.prob_padded()
+            mean = np.array(prob_pad['mean'])
+            var = np.array(prob_pad['var'])
+
         else:
             # K = 1:
             current_dag = dags[0]
@@ -221,12 +226,12 @@ def test_bayesian_active(problem, G_init, opts, K=1, am=0.1):
             for batch_k, a_k in zip(all_batches, all_interventions):
                 model.update_posterior(a_k, batch_k)
 
-                prob_pad = model.prob_padded()
-                mean = np.array(prob_pad['mean'])
-                var = np.array(prob_pad['var'])
+            prob_pad = model.prob_padded()
+            mean = np.array(prob_pad['mean'])
+            var = np.array(prob_pad['var'])
                 
-                sigma_square = problem.sigma_square if opts.known_noise else np.zeros(problem.sigma_square.shape)
-                acquisition = civ_acq(sigma_square, mean, var, problem.mu_target, opts.n, opts.measure)
+            sigma_square = problem.sigma_square if opts.known_noise else np.zeros(problem.sigma_square.shape)
+            acquisition = civ_acq(sigma_square, mean, var, problem.mu_target, opts.n, opts.measure)
 
         try:
             a_jitter = a.reshape(-1) * np.random.uniform(0.8, 1.2, (problem.nnodes,))
