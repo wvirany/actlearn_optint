@@ -54,7 +54,9 @@ def run_experiment_1(p, trial_id):
     G_wrong = None
     while G_wrong is None:
         try:
-            G_wrong = create_misspecified_dag(problem.DAG, n_changes=int(p * 8 / 10))
+            expected_edges = 0.1 * p * (p - 1)
+            target_shd = int(0.6 * expected_edges)
+            G_wrong = create_misspecified_dag(problem.DAG, n_changes=target_shd)
         except:
             continue
 
