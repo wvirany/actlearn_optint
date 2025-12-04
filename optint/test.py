@@ -2,7 +2,7 @@ import numpy as np
 
 from optint.model import linearSCM
 from optint.acquisition import *
-from optint.utils import compute_shd, learn_dag
+from optint.utils import compute_shd, learn_dag, create_intervention_matrix, compute_ibge_score
 
 
 def test_passive(problem, opts):
@@ -108,7 +108,7 @@ def test_active(problem, opts):
 	return A, Prob
 
 
-def test_bayesian_active(problem, G_init, opts, use_ibge=False, K=1, am=0.1):
+def test_bayesian_active(problem, G_init, opts, use_ibge=True, K=1, am=0.1):
     """
     Active learning with DAG re-learning.
     
@@ -202,8 +202,6 @@ def test_bayesian_active(problem, G_init, opts, use_ibge=False, K=1, am=0.1):
         all_data = np.hstack(all_batches)
         
         if use_ibge:
-            # Use iBGe scoring
-            from optint.utils import create_intervention_matrix, compute_ibge_score
             
             data_for_scoring, Imat = create_intervention_matrix(all_batches)
             

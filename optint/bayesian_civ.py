@@ -7,13 +7,13 @@ import graphical_models as gm
 from optint.acquisition import civ_acq
 from optint.data import synthetic_instance
 from optint.model import linearSCM
-from optint.test import test_active, test_bayesian_active
+from optint.test import test_active, test_bayesian_active, test_passive
 from optint.utils import create_misspecified_dag, learn_dag
 
 
 # Experiment parameters
-p = 10
-n_trials = 3
+p = 30
+n_trials = 10
 n_obs = 100
 
 class Opts:
@@ -37,6 +37,7 @@ def get_distances(A, a_star):
 all_dist_oracle = []
 all_dist_misspec = []
 all_dist_bayesian = []
+all_dist_random = []
 all_shd_bayesian = []
 
 
@@ -95,15 +96,20 @@ for trial in range(n_trials):
         am=0.1
     )
 
+    problem.DAG = true_dag  # reset
+    A_random, _ = test_passive(problem, opts)  # uses random interventions
+
     # Compute distances
     all_dist_oracle.append(get_distances(A_oracle, problem.a_target))
     all_dist_misspec.append(get_distances(A_misspec, problem.a_target))
     all_dist_bayesian.append(get_distances(A_bayesian, problem.a_target))
+    all_dist_random.append(get_distances(A_random, problem.a_target))
     all_shd_bayesian.append(SHD_bayesian)
 
 all_dist_oracle = np.array(all_dist_oracle)
 all_dist_misspec = np.array(all_dist_misspec)
 all_dist_bayesian = np.array(all_dist_bayesian)
+all_dist_random = np.array(all_dist_random)
 all_shd_bayesian = np.array(all_shd_bayesian)
 
 results_dir = Path('results')
@@ -112,4 +118,5 @@ results_dir.mkdir(parents=True, exist_ok=True)
 np.save(results_dir / 'bayesian_civ_distances.npy', all_dist_oracle)
 np.save(results_dir / 'bayesian_civ_misspec_distances.npy', all_dist_misspec)
 np.save(results_dir / 'bayesian_civ_bayesian_distances.npy', all_dist_bayesian)
+np.save(results_dir / 'bayesian_civ_random_distances.npy', all_dist_random)
 np.save(results_dir / 'bayesian_civ_shd.npy', all_shd_bayesian)

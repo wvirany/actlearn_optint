@@ -64,9 +64,7 @@ def create_intervention_matrix(batches):
     Returns:
         data: (total_samples, p) array - all data concatenated
         Imat: (total_samples, n_conditions) binary array - intervention indicators
-    """
-    import numpy as np
-    
+    """    
     n_conditions = len(batches)
     total_samples = sum(batch.shape[1] for batch in batches)
     p = batches[0].shape[0]
