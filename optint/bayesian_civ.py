@@ -12,8 +12,8 @@ from optint.utils import create_misspecified_dag, learn_dag
 
 
 # Experiment parameters
-p = 30
-n_trials = 10
+p = 10
+n_trials = 1
 n_obs = 100
 
 class Opts:

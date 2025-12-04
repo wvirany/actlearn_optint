@@ -177,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument('--experiment', type=int, required=True, choices=[1, 2])
     parser.add_argument('--p', type=int, required=True)
     parser.add_argument('--trial', type=int, required=True)
-    parser.ad_argument('--K', type=int, default=1)
+    parser.add_argument('--K', type=int, default=1)
     args = parser.parse_args()
 
     if args.experiment == 1:
