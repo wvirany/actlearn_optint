@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#SBATCH --job-name=exp1
+#SBATCH --job-name=exp2
 #SBATCH --array=0-14
 #SBATCH --time=3:00:00
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=logs/exp1_%A_%a.out
+#SBATCH --output=logs/exp2_%A_%a.out
 
 mkdir -p logs
 
@@ -15,4 +15,4 @@ export R_LIBS=~/.local/R/$EBVERSIONR/
 
 source ../optint_env/bin/activate
 
-python run_experiments.py --experiment 1 --p $1 --trial $SLURM_ARRAY_TASK_ID
+python run_experiments.py --experiment 2 --p $1 --K $2 --trial $SLURM_ARRAY_TASK_ID
