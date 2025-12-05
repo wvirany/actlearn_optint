@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#SBATCH --job-name=exp2
+#SBATCH --job-name=exp3
 #SBATCH --array=0-14
 #SBATCH --time=3:00:00
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=logs/exp2_%A_%a.out
+#SBATCH --output=logs/exp3_%A_%a.out
 
 mkdir -p logs
 

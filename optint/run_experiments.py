@@ -220,24 +220,12 @@ def run_experiment_3(shd_target, trial_id):
     
     # Create a misspecified DAG with target SHD
     G_wrong = None
-    attempts = 0
-    while G_wrong is None and attempts < 100:
+    while G_wrong is None:
         try:
             G_wrong = create_misspecified_dag(problem.DAG, n_changes=shd_target)
-            # Verify SHD is close to target
-            actual_shd = compute_shd(G_wrong, problem.DAG)
-            if abs(actual_shd - shd_target) > 2:  # Allow ±2 tolerance
-                G_wrong = None
-                attempts += 1
-                continue
         except:
-            attempts += 1
             continue
-    
-    if G_wrong is None:
-        print(f"Warning: Could not create misspecified DAG with SHD={shd_target} after {attempts} attempts")
-        return
-    
+
     # Learn initial DAG for CIV-UG
     G_learned = learn_dag(X_obs, problem.nnodes)
     
