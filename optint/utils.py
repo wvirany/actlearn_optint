@@ -3,29 +3,45 @@ from causallearn.search.ScoreBased.GES import ges
 import graphical_models as gm
 
 
-def create_misspecified_dag(true_dag, n_changes=2):
-    """Create a misspecified DAG by randomly adding/removing edges."""
+def create_misspecified_dag(true_dag, target_shd=5):
+    """Create a misspecified DAG with approximately target_shd from true_dag."""
     p = true_dag.nnodes
-    wrong_dag = gm.DAG(set(range(p)))
-
     true_arcs = list(true_dag.arcs)
-
-    # Remove some edges
-    if len(true_arcs) >= n_changes:
-        keep_arcs = true_arcs[:-n_changes]
+    
+    # We want to: remove some edges, add some edges
+    # SHD = removed + added (assuming no overlap)
+    # Strategy: remove ~half, add ~half
+    n_remove = target_shd // 2
+    n_add = target_shd - n_remove
+    
+    # Make sure we don't try to remove more edges than exist
+    n_remove = min(n_remove, len(true_arcs))
+    
+    # Start fresh
+    wrong_dag = gm.DAG(set(range(p)))
+    
+    # Randomly select which edges to keep
+    if n_remove > 0:
+        keep_indices = np.random.choice(len(true_arcs), 
+                                       size=len(true_arcs) - n_remove, 
+                                       replace=False)
+        keep_arcs = [true_arcs[i] for i in keep_indices]
         wrong_dag.add_arcs_from(keep_arcs)
     else:
         wrong_dag.add_arcs_from(true_arcs)
     
-    # Add some wrong edges
+    # Add new random edges
     added = 0
-    max_attempts = 50
+    max_attempts = 100
     attempts = 0
-    while added < n_changes and attempts < max_attempts:
+    while added < n_add and attempts < max_attempts:
         i, j = np.random.choice(p, 2, replace=False)
-        if i < j and (i, j) not in true_dag.arcs:
-            wrong_dag.add_arc(i, j)
-            added += 1
+        if i < j and (i, j) not in true_dag.arcs and not wrong_dag.has_arc(i, j):
+            try:
+                wrong_dag.add_arc(i, j)
+                added += 1
+            except:
+                pass
         attempts += 1
     
     return wrong_dag
